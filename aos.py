@@ -18,12 +18,91 @@ st.set_page_config(
 )
 
 # ============================================================================
+# CHART LAYOUT DEFAULTS (White Background Standard)
+# ============================================================================
+
+CHART_FONT = dict(
+    family="Inter, -apple-system, sans-serif",
+    size=12,
+    color="#374151"  # Dark gray for white bg
+)
+
+CHART_LAYOUT = dict(
+    paper_bgcolor='white',
+    plot_bgcolor='white',
+    font=CHART_FONT,
+    margin=dict(l=50, r=30, t=40, b=50),
+    xaxis=dict(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='#E5E7EB',
+        linecolor='#D1D5DB',
+        linewidth=1,
+        tickfont=dict(size=11, color='#4B5563'),
+        title_font=dict(size=12, color='#374151')
+    ),
+    yaxis=dict(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='#E5E7EB',
+        linecolor='#D1D5DB',
+        linewidth=1,
+        tickfont=dict(size=11, color='#4B5563'),
+        title_font=dict(size=12, color='#374151')
+    ),
+    legend=dict(
+        font=dict(size=11, color='#374151'),
+        bgcolor='rgba(255,255,255,0.9)',
+        bordercolor='#E5E7EB',
+        borderwidth=1
+    )
+)
+
+def apply_chart_style(fig, height=300, show_legend=True):
+    """Apply standard white-background styling to any plotly figure"""
+    fig.update_layout(
+        height=height,
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        font=CHART_FONT,
+        showlegend=show_legend,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=11, color='#374151'),
+            bgcolor='rgba(255,255,255,0.9)'
+        )
+    )
+    fig.update_xaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='#E5E7EB',
+        linecolor='#D1D5DB',
+        linewidth=1,
+        tickfont=dict(size=11, color='#4B5563'),
+        title_font=dict(size=12, color='#374151')
+    )
+    fig.update_yaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='#E5E7EB',
+        linecolor='#D1D5DB',
+        linewidth=1,
+        tickfont=dict(size=11, color='#4B5563'),
+        title_font=dict(size=12, color='#374151')
+    )
+    return fig
+
+# ============================================================================
 # CUSTOM CSS
 # ============================================================================
 
 st.markdown("""
 <style>
-    .main { background-color: #1a1d24; }
+    .main { background-color: #FFFFFF; }
     [data-testid="stSidebar"] { background-color: #F9FAFB; }
     [data-testid="stSidebar"] * { color: #1F2937 !important; }
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #111827 !important; }
@@ -31,7 +110,7 @@ st.markdown("""
     .sten-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 20px; border-radius: 12px; color: white; text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin: 5px 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 5px 0;
     }
     .sten-score { font-size: 36px; font-weight: bold; margin: 5px 0; }
     .sten-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
@@ -44,15 +123,19 @@ st.markdown("""
     .risk-red { background-color: #EF4444; color: white; }
     
     .metric-card {
-        background-color: #2d3748; padding: 15px; border-radius: 10px;
-        text-align: center; border: 1px solid #4a5568;
+        background-color: #F3F4F6; padding: 15px; border-radius: 10px;
+        text-align: center; border: 1px solid #E5E7EB;
     }
-    .metric-value { font-size: 24px; font-weight: bold; color: #60A5FA; }
-    .metric-label { font-size: 11px; color: #D1D5DB; text-transform: uppercase; }
+    .metric-value { font-size: 24px; font-weight: bold; color: #3B82F6; }
+    .metric-label { font-size: 11px; color: #6B7280; text-transform: uppercase; }
     
-    h1, h2, h3 { color: #F9FAFB; }
+    h1, h2, h3 { color: #111827; }
+    p, span, div { color: #374151; }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    
+    /* Data labels styling */
+    .plotly .text { font-weight: 600 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -165,7 +248,7 @@ def calculate_all_metrics(df):
         df = df.sort_values(['Athlete', 'Date'])
     
     # ===== VOLUME METRICS =====
-    volume_cols = ['Distance', 'Total Load', 'Move Time', '# ACCELS', '# DECELS']
+    volume_cols = ['Distance', 'Total Load', 'Total Impact', 'Total Horizontal Impact', 'Total Vertical Impact']
     volume_cols_present = [c for c in volume_cols if c in df.columns]
     
     if volume_cols_present:
@@ -183,7 +266,7 @@ def calculate_all_metrics(df):
         df['CALC_VOLUME_Z'] = 0.0
     
     # ===== INTENSITY METRICS =====
-    intensity_cols = ['Athlete Intensity', 'PEAK ACCEL', 'Maximum Speed', 'Impact Intensity']
+    intensity_cols = ['# ACCELS', '# DECELS', 'PEAK ACCEL', 'PEAK DECEL', 'Distance at High Speed', 'Distance at Very High Speed', 'Impact Intensity']
     intensity_cols_present = [c for c in intensity_cols if c in df.columns]
     
     if intensity_cols_present:
@@ -216,7 +299,7 @@ def calculate_all_metrics(df):
         df['CALC_ASYMMETRY_Z'] = 0.0
     
     # ===== PERFORMANCE METRICS =====
-    perf_cols = ['Maximum Speed', 'Maximum Jump Height', 'Distance at High Speed']
+    perf_cols = ['Maximum Speed', 'PEAK ACCEL', 'PEAK DECEL', 'Push-off Intensity']
     perf_cols_present = [c for c in perf_cols if c in df.columns]
     
     if perf_cols_present:
@@ -399,7 +482,7 @@ def calculate_all_metrics(df):
 # SIDEBAR
 # ============================================================================
 
-st.sidebar.title("🏋️ AMS Dashboard")
+st.sidebar.title("🏋️ AOS - Platform")
 st.sidebar.markdown("---")
 
 # File uploaders for each sheet
@@ -470,10 +553,15 @@ if 'physical' in data and 'Athlete' in data['physical'].columns:
 else:
     selected_athlete = "All Athletes"
 
-# Date filter
-if 'physical' in data and 'Date' in data['physical'].columns:
-    min_date = data['physical']['Date'].min()
-    max_date = data['physical']['Date'].max()
+# Date filter - combine from all sheets with Date column
+all_dates = []
+for sheet_name in ['physical', 'wellness', 'injury', 'info']:
+    if sheet_name in data and 'Date' in data[sheet_name].columns:
+        all_dates.extend(data[sheet_name]['Date'].dropna().tolist())
+
+if all_dates:
+    min_date = pd.Timestamp(min(all_dates))
+    max_date = pd.Timestamp(max(all_dates))
     if pd.notna(min_date) and pd.notna(max_date):
         date_range = st.sidebar.date_input(
             "Date Range",
@@ -673,14 +761,14 @@ if page == "🏠 Team":
                 col_idx = idx % min(len(status_data), 5)
                 with cols[col_idx]:
                     st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, {ath['Color']}33, {ath['Color']}11); 
+                    <div style="background: linear-gradient(135deg, {ath['Color']}22, {ath['Color']}11); 
                                 border: 2px solid {ath['Color']}; border-radius: 12px; padding: 15px; 
                                 text-align: center; margin: 5px 0;">
-                        <div style="font-size: 16px; font-weight: bold; color: white;">{ath['Athlete']}</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #111827;">{ath['Athlete']}</div>
                         <div style="font-size: 28px; font-weight: bold; color: {ath['Color']}; margin: 5px 0;">
                             {ath['Status']}
                         </div>
-                        <div style="font-size: 11px; color: #9CA3AF;">
+                        <div style="font-size: 11px; color: #6B7280;">
                             W:{ath['Wellness']:.0f}% | R:{ath['Readiness']:.0f} | L:{ath['Workload']:.1f}
                         </div>
                     </div>
@@ -713,7 +801,7 @@ if page == "🏠 Team":
                     marker=dict(size=20, color=quad_df['Color'].tolist(), line=dict(width=2, color='white')),
                     text=quad_df['Athlete'],
                     textposition='top center',
-                    textfont=dict(color='white', size=10),
+                    textfont=dict(color='#374151', size=10),
                     hovertemplate='<b>%{text}</b><br>Workload: %{x:.1f}<br>Readiness: %{y:.1f}<extra></extra>'
                 ))
                 
@@ -725,12 +813,12 @@ if page == "🏠 Team":
                 
                 fig.update_layout(
                     height=400,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
-                    xaxis=dict(range=[0, 10], title='Workload STEN', gridcolor='rgba(255,255,255,0.1)'),
-                    yaxis=dict(range=[0, 10], title='Readiness', gridcolor='rgba(255,255,255,0.1)'),
-                    margin=dict(l=40, r=40, t=40, b=40)
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
+                    xaxis=dict(range=[0, 10], title='Workload STEN', gridcolor='#E5E7EB', tickfont=dict(size=11, color='#4B5563')),
+                    yaxis=dict(range=[0, 10], title='Readiness', gridcolor='#E5E7EB', tickfont=dict(size=11, color='#4B5563')),
+                    margin=dict(l=50, r=40, t=40, b=50)
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
@@ -738,22 +826,22 @@ if page == "🏠 Team":
         with col2:
             st.markdown("**Quadrant Guide:**")
             st.markdown("""
-            <div style="background-color: #2d3748; padding: 15px; border-radius: 10px;">
+            <div style="background-color: #F3F4F6; padding: 15px; border-radius: 10px; border: 1px solid #E5E7EB;">
                 <div style="margin-bottom: 10px;">
-                    <span style="color: #10B981;">✅ OPTIMAL</span><br>
-                    <span style="font-size: 11px; color: #9CA3AF;">High readiness, manageable load</span>
+                    <span style="color: #10B981; font-weight: bold;">✅ OPTIMAL</span><br>
+                    <span style="font-size: 11px; color: #6B7280;">High readiness, manageable load</span>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <span style="color: #F59E0B;">⚡ PUSHING</span><br>
-                    <span style="font-size: 11px; color: #9CA3AF;">High readiness, high load - monitor</span>
+                    <span style="color: #F59E0B; font-weight: bold;">⚡ PUSHING</span><br>
+                    <span style="font-size: 11px; color: #6B7280;">High readiness, high load - monitor</span>
                 </div>
                 <div style="margin-bottom: 10px;">
-                    <span style="color: #3B82F6;">🔄 RECOVERING</span><br>
-                    <span style="font-size: 11px; color: #9CA3AF;">Low readiness, low load - resting</span>
+                    <span style="color: #3B82F6; font-weight: bold;">🔄 RECOVERING</span><br>
+                    <span style="font-size: 11px; color: #6B7280;">Low readiness, low load - resting</span>
                 </div>
                 <div>
-                    <span style="color: #EF4444;">🚨 DANGER</span><br>
-                    <span style="font-size: 11px; color: #9CA3AF;">Low readiness, high load - risk!</span>
+                    <span style="color: #EF4444; font-weight: bold;">🚨 DANGER</span><br>
+                    <span style="font-size: 11px; color: #6B7280;">Low readiness, high load - risk!</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -781,9 +869,9 @@ if page == "🏠 Team":
                 
                 fig.update_layout(
                     height=250,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
                     margin=dict(l=80, r=40, t=10, b=40),
                     xaxis=dict(title='Hours')
                 )
@@ -805,9 +893,9 @@ if page == "🏠 Team":
                 
                 fig.update_layout(
                     height=250,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
                     margin=dict(l=80, r=40, t=10, b=40),
                     xaxis=dict(title='km')
                 )
@@ -829,9 +917,9 @@ if page == "🏠 Team":
                 
                 fig.update_layout(
                     height=250,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
                     margin=dict(l=80, r=40, t=10, b=40),
                     xaxis=dict(title='Load (k)')
                 )
@@ -875,17 +963,20 @@ if page == "🏠 Team":
                 radialaxis=dict(
                     visible=True, 
                     range=[0, 10], 
-                    tickfont=dict(color='#1a1d24', size=10),
-                    tickvals=[2, 4, 6, 8, 10]
+                    tickfont=dict(color='#4B5563', size=10),
+                    tickvals=[2, 4, 6, 8, 10],
+                    gridcolor='#E5E7EB'
                 ),
                 angularaxis=dict(
-                    tickfont=dict(color='#1a1d24', size=12, family='Arial Black'),
+                    tickfont=dict(color='#374151', size=11),
                         rotation=90,
-                        direction='clockwise'
-                    )
+                        direction='clockwise',
+                        gridcolor='#E5E7EB'
+                    ),
+                bgcolor='white'
                 ),
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white'),
+                paper_bgcolor='white',
+                font=dict(color='#374151', size=12),
                 height=350,
                 margin=dict(l=80, r=80, t=60, b=60),
                 showlegend=False
@@ -914,9 +1005,9 @@ if page == "🏠 Team":
             
             fig.update_layout(
                 height=350,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white'),
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(color='#374151', size=12),
                 xaxis=dict(range=[0, 10], title='Risk Score'),
                 margin=dict(l=100, r=40, t=40, b=40)
             )
@@ -952,9 +1043,9 @@ if page == "🏠 Team":
                     
                     fig.update_layout(
                         height=250,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         xaxis=dict(title='Efficiency Score'),
                         margin=dict(l=100, r=40, t=10, b=40)
                     )
@@ -989,9 +1080,9 @@ if page == "🏠 Team":
                     fig.update_layout(
                         height=250,
                         barmode='group',
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         yaxis=dict(range=[0, 10], title='Level'),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=40, r=40, t=40, b=40)
@@ -1047,7 +1138,7 @@ if page == "🏠 Team":
                     st.markdown(f"""
                     <div style="background-color: {color}22; border: 1px solid {color}; 
                                 border-radius: 8px; padding: 10px; margin: 5px 0;">
-                        <div style="font-size: 11px; color: #9CA3AF;">{alert['Athlete']}</div>
+                        <div style="font-size: 11px; color: #6B7280;">{alert['Athlete']}</div>
                         <div style="font-size: 14px; color: white; font-weight: bold;">{icon} {alert['Alert']}</div>
                         <div style="font-size: 16px; color: {color}; font-weight: bold;">{alert['Value']}</div>
                     </div>
@@ -1184,17 +1275,20 @@ elif page == "🏃 Physical":
                     radialaxis=dict(
                         visible=True, 
                         range=[0, 10], 
-                        tickfont=dict(color='#1a1d24', size=10),
-                        tickvals=[2, 4, 6, 8, 10]
+                        tickfont=dict(color='#4B5563', size=10),
+                        tickvals=[2, 4, 6, 8, 10],
+                        gridcolor='#E5E7EB'
                     ),
                     angularaxis=dict(
-                        tickfont=dict(color='#1a1d24', size=12, family='Arial Black'),
+                        tickfont=dict(color='#374151', size=11),
                             rotation=90,
-                            direction='clockwise'
-                        )
+                            direction='clockwise',
+                            gridcolor='#E5E7EB'
+                        ),
+                    bgcolor='white'
                     ),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
+                    paper_bgcolor='white',
+                    font=dict(color='#374151', size=12),
                     height=350,
                     margin=dict(l=80, r=80, t=60, b=60),
                     showlegend=False
@@ -1222,9 +1316,9 @@ elif page == "🏃 Physical":
                 fig.update_layout(
                     xaxis=dict(range=[0, 10], title='Risk Score'),
                     yaxis=dict(title=''),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
                     height=350,
                     margin=dict(l=100, r=40, t=40, b=40)
                 )
@@ -1266,9 +1360,9 @@ elif page == "🏃 Physical":
                 
                 fig.update_layout(
                     height=350,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
                     yaxis=dict(range=[0, 10], title='STEN Score'),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                     margin=dict(l=40, r=40, t=60, b=40)
@@ -1308,15 +1402,15 @@ elif page == "🏃 Physical":
                         fig.add_hrect(y0=0, y1=0.8, fillcolor="blue", opacity=0.1, line_width=0)
                         
                         # Reference lines
-                        fig.add_hline(y=1.0, line_dash="dash", line_color="white", opacity=0.5)
-                        fig.add_hline(y=1.3, line_dash="dot", line_color="orange", opacity=0.7)
-                        fig.add_hline(y=1.5, line_dash="dot", line_color="red", opacity=0.7)
+                        fig.add_hline(y=1.0, line_dash="dash", line_color="#9CA3AF", opacity=0.7)
+                        fig.add_hline(y=1.3, line_dash="dot", line_color="#F59E0B", opacity=0.7)
+                        fig.add_hline(y=1.5, line_dash="dot", line_color="#EF4444", opacity=0.7)
                         
                         fig.update_layout(
                             height=300,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
+                            paper_bgcolor='white',
+                            plot_bgcolor='white',
+                            font=dict(color='#374151', size=12),
                             yaxis=dict(range=[0.5, 2.0], title='A:C Ratio'),
                             xaxis=dict(title=''),
                             showlegend=False,
@@ -1378,12 +1472,12 @@ elif page == "🏃 Physical":
                         
                         st.markdown(f"""
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <div style="flex: 1; background-color: #2d3748; padding: 10px; border-radius: 8px; text-align: center;">
-                                <div style="font-size: 10px; color: #9CA3AF;">7-Day (Acute)</div>
+                            <div style="flex: 1; background-color: #F3F4F6; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 10px; color: #6B7280;">7-Day (Acute)</div>
                                 <div style="font-size: 18px; font-weight: bold; color: #60A5FA;">{acute:,.0f}</div>
                             </div>
-                            <div style="flex: 1; background-color: #2d3748; padding: 10px; border-radius: 8px; text-align: center;">
-                                <div style="font-size: 10px; color: #9CA3AF;">28-Day (Chronic)</div>
+                            <div style="flex: 1; background-color: #F3F4F6; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 10px; color: #6B7280;">28-Day (Chronic)</div>
                                 <div style="font-size: 18px; font-weight: bold; color: #A78BFA;">{chronic:,.0f}</div>
                             </div>
                         </div>
@@ -1425,9 +1519,9 @@ elif page == "🏃 Physical":
                     
                     fig.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=40, r=40, t=60, b=40)
                     )
@@ -1463,9 +1557,9 @@ elif page == "🏃 Physical":
                     
                     fig.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         yaxis=dict(title='Asymmetry %'),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=40, r=40, t=60, b=40)
@@ -1497,21 +1591,33 @@ elif page == "🏃 Physical":
                     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                     pivot_load = pivot_load.reindex([d for d in day_order if d in pivot_load.index])
                     
+                    # Replace 0 with NaN so they show as blank
+                    pivot_load = pivot_load.replace(0, np.nan)
+                    
+                    # Create text array - blank for NaN, value for actual data
+                    text_vals = np.where(pd.isna(pivot_load.values), '', np.round(pivot_load.values, 0).astype(str))
+                    
                     fig_load = go.Figure(data=go.Heatmap(
                         z=pivot_load.values,
                         x=[f'W{int(w)}' for w in pivot_load.columns],
                         y=pivot_load.index,
                         colorscale='Blues',
-                        showscale=True,
-                        colorbar=dict(title="Load", len=0.8)
+                        showscale=False,
+                        text=text_vals,
+                        texttemplate="%{text}",
+                        textfont=dict(size=14, color='black'),
+                        hovertemplate='%{y}<br>%{x}<br>Load: %{z:.0f}<extra></extra>',
+                        xgap=2,
+                        ygap=2
                     ))
                     
                     fig_load.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
-                        xaxis=dict(side='top'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
+                        xaxis=dict(side='top', tickfont=dict(color='#4B5563')),
+                        yaxis=dict(tickfont=dict(color='#4B5563')),
                         margin=dict(l=100, r=20, t=60, b=40)
                     )
                     
@@ -1536,21 +1642,33 @@ elif page == "🏃 Physical":
                     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                     pivot_speed = pivot_speed.reindex([d for d in day_order if d in pivot_speed.index])
                     
+                    # Replace 0 with NaN so they show as blank
+                    pivot_speed = pivot_speed.replace(0, np.nan)
+                    
+                    # Create text array - blank for NaN, value for actual data
+                    text_vals = np.where(pd.isna(pivot_speed.values), '', np.round(pivot_speed.values, 1).astype(str))
+                    
                     fig_speed = go.Figure(data=go.Heatmap(
                         z=pivot_speed.values,
                         x=[f'W{int(w)}' for w in pivot_speed.columns],
                         y=pivot_speed.index,
                         colorscale='Reds',
-                        showscale=True,
-                        colorbar=dict(title="m/s", len=0.8)
+                        showscale=False,
+                        text=text_vals,
+                        texttemplate="%{text}",
+                        textfont=dict(size=14, color='black'),
+                        hovertemplate='%{y}<br>%{x}<br>Speed: %{z:.1f} m/s<extra></extra>',
+                        xgap=2,
+                        ygap=2
                     ))
                     
                     fig_speed.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
-                        xaxis=dict(side='top'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
+                        xaxis=dict(side='top', tickfont=dict(color='#4B5563')),
+                        yaxis=dict(tickfont=dict(color='#4B5563')),
                         margin=dict(l=100, r=20, t=60, b=40)
                     )
                     
@@ -1666,8 +1784,44 @@ elif page == "❤️ Wellness":
                 latest = df.iloc[-1]
             
             # ===== ROW 1: WELLNESS STATUS BANNER =====
-            color = latest.get('COLOR', 'YELLOW')
-            wellness_pct = latest.get('Wellness %', 0)
+            # Calculate Wellness % from components
+            sleep_dur = float(latest.get('SLEEP DURATION', 0) or 0)
+            sleep_qual = float(latest.get('SLEEP QUALITY', 0) or 0)
+            energy = float(latest.get('ENERGY LEVEL', 0) or 0)
+            fatigue = float(latest.get('FATIGUE LEVEL', 0) or 0)
+            stress = float(latest.get('STRESS LEVEL', 0) or 0)
+            readiness = float(latest.get('READINESS TO TRAIN', 0) or 0)
+
+            # Soreness levels (4 areas)
+            soreness_total = sum([
+                float(latest.get('Soreness Level 1', 0) or 0),
+                float(latest.get('Soreness Level 2', 0) or 0),
+                float(latest.get('Soreness Level 3', 0) or 0),
+                float(latest.get('Soreness Level 4', 0) or 0)
+            ])
+
+            # Pain levels (4 areas)
+            pain_total = sum([
+                float(latest.get('Pain Level 1', 0) or 0),
+                float(latest.get('Pain Level 2', 0) or 0),
+                float(latest.get('Pain Level 3', 0) or 0),
+                float(latest.get('Pain Level 4', 0) or 0)
+            ])
+
+            # Formula: 50% core metrics + 20% soreness + 30% pain
+            wellness_metrics = (min(10, (sleep_dur/8)*10) + sleep_qual + energy + (10-fatigue) + (10-stress) + readiness) / 60 * 0.5
+            soreness_factor = (1 - (min(10, soreness_total)/10)) * 0.2
+            pain_factor = (1 - (min(10, pain_total)/10)) * 0.3
+
+            wellness_pct = round((wellness_metrics + soreness_factor + pain_factor) * 100, 1)
+            
+            # Determine color based on wellness score
+            if wellness_pct >= 85:
+                color = 'GREEN'
+            elif wellness_pct >= 70:
+                color = 'YELLOW'
+            else:
+                color = 'RED'
             
             color_map = {'GREEN': '#10B981', 'YELLOW': '#F59E0B', 'RED': '#EF4444'}
             bg_color = color_map.get(color, '#F59E0B')
@@ -1741,9 +1895,9 @@ elif page == "❤️ Wellness":
                     
                     fig.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=40, r=40, t=40, b=40)
                     )
@@ -1776,9 +1930,9 @@ elif page == "❤️ Wellness":
                     
                     fig.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         yaxis=dict(range=[0, 10], title='Score (1-10)'),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=40, r=40, t=40, b=40)
@@ -1836,9 +1990,9 @@ elif page == "❤️ Wellness":
                     
                     fig.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         yaxis=dict(range=[0.5, 2.0], title='ACWR'),
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         margin=dict(l=40, r=40, t=40, b=40)
@@ -1872,7 +2026,7 @@ elif page == "❤️ Wellness":
                     """, unsafe_allow_html=True)
                     
                     st.markdown("""
-                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 10px;">
+                    <div style="font-size: 11px; color: #6B7280; margin-top: 10px;">
                     <b>ACWR Guide:</b><br>
                     &lt;0.8 = Undertrained<br>
                     0.8-1.3 = Optimal<br>
@@ -1900,23 +2054,35 @@ elif page == "❤️ Wellness":
                 day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                 pivot = pivot.reindex([d for d in day_order if d in pivot.index])
                 
+                # Replace 0 with NaN so they show as blank
+                pivot = pivot.replace(0, np.nan)
+                
+                # Create text array - blank for NaN, value for actual data
+                text_vals = np.where(pd.isna(pivot.values), '', np.round(pivot.values, 0).astype(str))
+                
                 fig = go.Figure(data=go.Heatmap(
                     z=pivot.values,
                     x=[f'W{int(w)}' for w in pivot.columns],
                     y=pivot.index,
                     colorscale='RdYlGn',
-                    showscale=True,
-                    colorbar=dict(title="Wellness %"),
+                    showscale=False,
                     zmin=60,
-                    zmax=100
+                    zmax=100,
+                    text=text_vals,
+                    texttemplate="%{text}",
+                    textfont=dict(size=11, color='#374151'),
+                    hovertemplate='%{y}<br>%{x}<br>Wellness: %{z:.0f}%<extra></extra>',
+                    xgap=2,
+                    ygap=2
                 ))
                 
                 fig.update_layout(
                     height=280,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
-                    xaxis=dict(side='top'),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
+                    xaxis=dict(side='top', tickfont=dict(color='#4B5563')),
+                    yaxis=dict(tickfont=dict(color='#4B5563')),
                     margin=dict(l=100, r=40, t=60, b=40)
                 )
                 
@@ -1961,9 +2127,9 @@ elif page == "❤️ Wellness":
                     fig.update_layout(
                         xaxis=dict(range=[0, 10], title='Level'),
                         yaxis=dict(title=''),
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         height=200,
                         margin=dict(l=100, r=40, t=20, b=40)
                     )
@@ -2004,9 +2170,9 @@ elif page == "❤️ Wellness":
                     fig.update_layout(
                         xaxis=dict(range=[0, 10], title='Level'),
                         yaxis=dict(title=''),
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         height=200,
                         margin=dict(l=100, r=40, t=20, b=40)
                     )
@@ -2052,9 +2218,9 @@ elif page == "❤️ Wellness":
                 
                 fig.update_layout(
                     height=300,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
                     yaxis=dict(range=[50, 100], title='Wellness %'),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                     margin=dict(l=40, r=40, t=60, b=40)
@@ -2167,8 +2333,8 @@ elif page == "🩹 Injury":
                         display_val = 'N/A'
                     
                     st.markdown(f"""
-                    <div style="background-color: #2d3748; padding: 20px; border-radius: 10px; text-align: center; border-left: 4px solid {mult_color};">
-                        <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase;">{label}</div>
+                    <div style="background-color: #F3F4F6; padding: 20px; border-radius: 10px; text-align: center; border-left: 4px solid {mult_color};">
+                        <div style="font-size: 11px; color: #6B7280; text-transform: uppercase;">{label}</div>
                         <div style="font-size: 28px; font-weight: bold; color: {mult_color};">{display_val}</div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2191,16 +2357,19 @@ elif page == "🩹 Injury":
                             labels=region_counts['Region'],
                             values=region_counts['Count'],
                             hole=0.4,
-                            marker=dict(colors=px.colors.qualitative.Set2)
+                            marker=dict(colors=px.colors.qualitative.Set2),
+                            textinfo='value+percent',
+                            textfont=dict(size=11, color='#374151'),
+                            textposition='outside'
                         )])
                         
                         fig.update_layout(
                             height=300,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
-                            margin=dict(l=20, r=20, t=20, b=20),
+                            paper_bgcolor='white',
+                            font=dict(color='#374151', size=12),
+                            margin=dict(l=20, r=20, t=20, b=40),
                             showlegend=True,
-                            legend=dict(font=dict(size=10))
+                            legend=dict(font=dict(size=11, color='#374151'))
                         )
                         
                         st.plotly_chart(fig, use_container_width=True)
@@ -2233,9 +2402,9 @@ elif page == "🩹 Injury":
                         
                         fig.update_layout(
                             height=300,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
+                            paper_bgcolor='white',
+                            plot_bgcolor='white',
+                            font=dict(color='#374151', size=12),
                             xaxis=dict(title=''),
                             yaxis=dict(title='Count'),
                             margin=dict(l=40, r=40, t=20, b=40)
@@ -2279,9 +2448,9 @@ elif page == "🩹 Injury":
                         
                         fig.update_layout(
                             height=250,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
+                            paper_bgcolor='white',
+                            plot_bgcolor='white',
+                            font=dict(color='#374151', size=12),
                             xaxis=dict(title='Count'),
                             yaxis=dict(title=''),
                             margin=dict(l=80, r=40, t=20, b=40)
@@ -2316,9 +2485,9 @@ elif page == "🩹 Injury":
                         
                         fig.update_layout(
                             height=250,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
+                            paper_bgcolor='white',
+                            plot_bgcolor='white',
+                            font=dict(color='#374151', size=12),
                             xaxis=dict(title='Count'),
                             yaxis=dict(title=''),
                             margin=dict(l=80, r=40, t=20, b=40)
@@ -2370,15 +2539,15 @@ elif page == "🩹 Injury":
                         ),
                         text=labels,
                         textposition='top center',
-                        textfont=dict(size=10, color='white'),
+                        textfont=dict(size=10, color='#374151'),
                         hovertemplate='<b>%{text}</b><br>Date: %{x}<br>Score: %{y:.2f}<extra></extra>'
                     ))
                     
                     fig.update_layout(
                         height=350,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
                         xaxis=dict(title='Date'),
                         yaxis=dict(title='Individual Score'),
                         margin=dict(l=40, r=40, t=40, b=40),
@@ -2418,9 +2587,9 @@ elif page == "🩹 Injury":
                         
                         fig.update_layout(
                             height=280,
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
+                            paper_bgcolor='white',
+                            plot_bgcolor='white',
+                            font=dict(color='#374151', size=12),
                             xaxis=dict(title='Months Since Injury'),
                             yaxis=dict(title='Count'),
                             margin=dict(l=40, r=40, t=20, b=40)
@@ -2435,17 +2604,17 @@ elif page == "🩹 Injury":
                         old = len(df_recency[df_recency['Months Since'] >= 36])
                         
                         st.markdown(f"""
-                        <div style="background-color: #2d3748; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                        <div style="background-color: #F3F4F6; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
                             <div style="color: #EF4444; font-size: 24px; font-weight: bold;">{recent}</div>
-                            <div style="color: #9CA3AF; font-size: 12px;">Recent (&lt;1 year)</div>
+                            <div style="color: #6B7280; font-size: 12px;">Recent (&lt;1 year)</div>
                         </div>
-                        <div style="background-color: #2d3748; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                        <div style="background-color: #F3F4F6; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
                             <div style="color: #F59E0B; font-size: 24px; font-weight: bold;">{moderate}</div>
-                            <div style="color: #9CA3AF; font-size: 12px;">Moderate (1-3 years)</div>
+                            <div style="color: #6B7280; font-size: 12px;">Moderate (1-3 years)</div>
                         </div>
-                        <div style="background-color: #2d3748; padding: 15px; border-radius: 10px;">
+                        <div style="background-color: #F3F4F6; padding: 15px; border-radius: 10px;">
                             <div style="color: #10B981; font-size: 24px; font-weight: bold;">{old}</div>
-                            <div style="color: #9CA3AF; font-size: 12px;">Old (3+ years)</div>
+                            <div style="color: #6B7280; font-size: 12px;">Old (3+ years)</div>
                         </div>
                         """, unsafe_allow_html=True)
             
@@ -2565,16 +2734,19 @@ elif page == "ℹ️ Info":
                         labels=sport_counts['Sport'],
                         values=sport_counts['Count'],
                         hole=0.4,
-                        marker=dict(colors=['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'])
+                        marker=dict(colors=['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']),
+                        textinfo='value+percent',
+                        textfont=dict(size=12, color='#374151'),
+                        textposition='outside'
                     )])
                     
                     fig.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
-                        margin=dict(l=20, r=20, t=20, b=20),
+                        paper_bgcolor='white',
+                        font=dict(color='#374151', size=12),
+                        margin=dict(l=20, r=20, t=20, b=40),
                         showlegend=True,
-                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(size=11, color='#374151'))
                     )
                     
                     st.plotly_chart(fig, use_container_width=True)
@@ -2598,16 +2770,17 @@ elif page == "ℹ️ Info":
                         y=tier_counts['Count'],
                         marker_color=colors,
                         text=tier_counts['Count'],
-                        textposition='outside'
+                        textposition='outside',
+                        textfont=dict(size=12, color='#374151')
                     ))
                     
                     fig.update_layout(
                         height=300,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color='white'),
-                        xaxis=dict(title=''),
-                        yaxis=dict(title='Count'),
+                        paper_bgcolor='white',
+                        plot_bgcolor='white',
+                        font=dict(color='#374151', size=12),
+                        xaxis=dict(title='', tickfont=dict(size=11, color='#4B5563'), showgrid=False),
+                        yaxis=dict(title='Count', tickfont=dict(size=11, color='#4B5563'), gridcolor='#E5E7EB'),
                         margin=dict(l=40, r=40, t=20, b=40)
                     )
                     
@@ -2639,20 +2812,21 @@ elif page == "ℹ️ Info":
                     orientation='h',
                     marker_color=colors,
                     text=df_sorted['FINAL SCORE'].round(1),
-                    textposition='outside'
+                    textposition='outside',
+                    textfont=dict(size=11, color='#374151')
                 ))
                 
                 # Add threshold lines
-                fig.add_vline(x=85, line_dash="dash", line_color="green", annotation_text="Green (85+)")
-                fig.add_vline(x=70, line_dash="dash", line_color="orange", annotation_text="Yellow (70+)")
+                fig.add_vline(x=85, line_dash="dash", line_color="#10B981", annotation_text="Green (85+)", annotation_font=dict(size=10, color='#10B981'))
+                fig.add_vline(x=70, line_dash="dash", line_color="#F59E0B", annotation_text="Yellow (70+)", annotation_font=dict(size=10, color='#F59E0B'))
                 
                 fig.update_layout(
                     height=max(250, len(df_sorted) * 50),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
-                    xaxis=dict(range=[0, 100], title='Final Score'),
-                    yaxis=dict(title=''),
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
+                    font=dict(color='#374151', size=12),
+                    xaxis=dict(range=[0, 100], title='Final Score', tickfont=dict(size=11, color='#4B5563'), gridcolor='#E5E7EB'),
+                    yaxis=dict(title='', tickfont=dict(size=11, color='#4B5563')),
                     margin=dict(l=120, r=60, t=40, b=40)
                 )
                 
@@ -2701,14 +2875,14 @@ elif page == "ℹ️ Info":
                 
                 with cols[col_idx]:
                     st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, {bg_color}22, {bg_color}44); 
+                    <div style="background: linear-gradient(135deg, {bg_color}44, {bg_color}66); 
                                 border: 2px solid {border_color}; 
                                 border-radius: 12px; 
                                 padding: 15px; 
                                 margin: 10px 0;
                                 text-align: center;">
-                        <div style="font-size: 20px; font-weight: bold; color: white;">{name}</div>
-                        <div style="font-size: 14px; color: #9CA3AF; margin: 5px 0;">{sport} | Age: {age}</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #111827;">{name}</div>
+                        <div style="font-size: 14px; color: #6B7280; margin: 5px 0;">{sport} | Age: {age}</div>
                         <div style="font-size: 32px; font-weight: bold; color: {border_color}; margin: 10px 0;">{score}</div>
                         <div style="background-color: {border_color}; color: white; padding: 5px 15px; 
                                     border-radius: 20px; display: inline-block; font-size: 12px; font-weight: bold;">
@@ -2722,4 +2896,4 @@ elif page == "ℹ️ Info":
 # ============================================================================
 
 st.markdown("---")
-st.caption("Athlete Management System")
+st.caption("Athlete Operating System | Built with Ash")
