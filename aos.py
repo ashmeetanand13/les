@@ -102,40 +102,59 @@ def apply_chart_style(fig, height=300, show_legend=True):
 
 st.markdown("""
 <style>
-    .main { background-color: #FFFFFF; }
+    /* Global Backgrounds */
+    .stApp { background-color: #FFFFFF; }
     [data-testid="stSidebar"] { background-color: #F9FAFB; }
+    
+    /* Sidebar Text */
     [data-testid="stSidebar"] * { color: #1F2937 !important; }
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #111827 !important; }
     
+    /* Updated Sten Card: Light Gradient with Dark Text */
     .sten-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px; border-radius: 12px; color: white; text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 5px 0;
+        background: linear-gradient(135deg, #E0E7FF 0%, #EEF2FF 100%);
+        padding: 20px; 
+        border-radius: 12px; 
+        color: #3730A3; /* Deep Indigo text */
+        text-align: center;
+        border: 1px solid #C7D2FE;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        margin: 5px 0;
     }
-    .sten-score { font-size: 36px; font-weight: bold; margin: 5px 0; }
-    .sten-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+    .sten-score { font-size: 36px; font-weight: bold; margin: 5px 0; color: #312E81; }
+    .sten-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #4338CA; font-weight: 600; }
     
+    /* Risk Cards: Pastel versions for better readability on light mode */
     .risk-card {
-        padding: 15px; border-radius: 10px; text-align: center; margin: 5px 0;
+        padding: 15px; border-radius: 10px; text-align: center; margin: 5px 0; font-weight: bold;
     }
-    .risk-green { background-color: #10B981; color: white; }
-    .risk-yellow { background-color: #F59E0B; color: white; }
-    .risk-red { background-color: #EF4444; color: white; }
+    .risk-green { background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+    .risk-yellow { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+    .risk-red { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
     
+    /* Metric Card: Clean Grey/White */
     .metric-card {
-        background-color: #F3F4F6; padding: 15px; border-radius: 10px;
-        text-align: center; border: 1px solid #E5E7EB;
+        background-color: #FFFFFF; 
+        padding: 15px; 
+        border-radius: 10px;
+        text-align: center; 
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .metric-value { font-size: 24px; font-weight: bold; color: #3B82F6; }
-    .metric-label { font-size: 11px; color: #6B7280; text-transform: uppercase; }
+    .metric-value { font-size: 24px; font-weight: bold; color: #2563EB; }
+    .metric-label { font-size: 11px; color: #4B5563; text-transform: uppercase; font-weight: 600; }
     
-    h1, h2, h3 { color: #111827; }
+    /* Typography */
+    h1, h2, h3 { color: #111827 !important; }
     p, span, div { color: #374151; }
+    
+    /* Hide Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    header {visibility: hidden;}
     
-    /* Data labels styling */
-    .plotly .text { font-weight: 600 !important; }
+    /* Plotly visibility */
+    .plotly .text { font-weight: 600 !important; fill: #111827 !important; }
 </style>
 """, unsafe_allow_html=True)
 
